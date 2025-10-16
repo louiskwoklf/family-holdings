@@ -15,15 +15,22 @@
   <main class="container">
     <section class="grand">
       <div class="card grand-card">
-        <div class="card-title">Grand Total (All People, All Accounts)</div>
+        <div class="grand-top">
+          <div class="card-title">Grand Total (All People, All Accounts)</div>
+          <div class="currency-toggle" role="tablist" aria-label="Grand total currency">
+            <button class="pill gbp" data-ccy="GBP" aria-selected="true">GBP</button>
+            <button class="pill usd" data-ccy="USD" aria-selected="false">USD</button>
+            <button class="pill hkd" data-ccy="HKD" aria-selected="false">HKD</button>
+          </div>
+        </div>
         <div class="grand-value" id="grand-total">—</div>
+        <div class="grand-note" id="grand-note"></div>
       </div>
     </section>
 
     <section id="people"></section>
   </main>
 
-  <!-- Person section template -->
   <template id="person-section">
     <section class="person">
       <div class="person-header">
@@ -35,7 +42,6 @@
     </section>
   </template>
 
-  <!-- Account card template (total only) -->
   <template id="account-card">
     <div class="card">
       <div class="card-head">

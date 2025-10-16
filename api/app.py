@@ -7,16 +7,12 @@ from fastapi.staticfiles import StaticFiles
 from requests.auth import HTTPBasicAuth
 
 app = FastAPI()
-
-# --- Static files (serve the UI) ---
 app.mount("/assets", StaticFiles(directory="web"), name="assets")
 
-# Root route -> serve index.html
 @app.get("/")
 def root():
     return FileResponse("web/index.html")
 
-# --- Trading 212 config ---
 BASE_URL = os.getenv("T212_BASE_URL", "https://live.trading212.com")
 ENDPOINT = "/api/v0/equity/account/cash"
 HEADERS = {"Accept": "application/json"}
@@ -51,17 +47,23 @@ ACCOUNTS: Dict[str, Dict[str, Dict[str, str]]] = {
 }
 
 def as_float(x: Any) -> float:
-    try: return float(x) if x is not None else 0.0
-    except Exception: return 0.0
+    try:
+        return float(x) if x is not None else 0.0
+    except Exception:
+        return 0.0
 
 def fetch_cash_balance(api_key_id: str, api_secret_key: str) -> Dict[str, Any]:
-    r = requests.get(BASE_URL + ENDPOINT, headers=HEADERS,
-                     auth=HTTPBasicAuth(api_key_id, api_secret_key), timeout=20)
-    if r.status_code == 200: return r.json()
+    r = requests.get(
+        BASE_URL + ENDPOINT,
+        headers=HEADERS,
+        auth=HTTPBasicAuth(api_key_id, api_secret_key),
+        timeout=20,
+    )
+    if r.status_code == 200:
+        return r.json()
     return {"error": f"{r.status_code}: {r.text}"}
 
-def get_latest_exchange_rate(base_currency, target_currency):
-    # try last 7 days to avoid weekend gaps
+def get_latest_exchange_rate(base_currency: str, target_currency: str) -> float:
     for i in range(7):
         d = (datetime.now(timezone.utc).date() - timedelta(days=i)).strftime("%Y-%m-%d")
         url = f"https://api.frankfurter.app/{d}?from={base_currency}&to={target_currency}"
@@ -69,10 +71,28 @@ def get_latest_exchange_rate(base_currency, target_currency):
             resp = requests.get(url, timeout=5)
             if resp.status_code == 200:
                 rate = resp.json().get("rates", {}).get(target_currency)
-                if rate: return float(rate)
+                if rate:
+                    return float(rate)
         except requests.exceptions.RequestException:
             pass
     raise RuntimeError("FX lookup failed")
+
+def get_fx_rates_from_gbp() -> Dict[str, Any]:
+    for i in range(7):
+        d = (datetime.now(timezone.utc).date() - timedelta(days=i)).strftime("%Y-%m-%d")
+        url = f"https://api.frankfurter.app/{d}?from=GBP&to=USD,HKD"
+        try:
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                j = resp.json()
+                rates = j.get("rates", {})
+                usd = float(rates.get("USD")) if rates.get("USD") is not None else None
+                hkd = float(rates.get("HKD")) if rates.get("HKD") is not None else None
+                if usd is not None or hkd is not None:
+                    return {"date": j.get("date", d), "USD": usd, "HKD": hkd}
+        except requests.exceptions.RequestException:
+            pass
+    return {"date": None, "USD": None, "HKD": None}
 
 @app.get("/healthz")
 def healthz():
@@ -86,12 +106,14 @@ def balances():
         except Exception:
             usd_to_gbp = None
 
-        by_person = {}
+        by_person: Dict[str, Dict[str, float]] = {}
         grand = {"free_gbp": 0.0, "portfolio_gbp": 0.0, "total_gbp": 0.0}
         accounts_out = []
 
         for person, accounts in ACCOUNTS.items():
-            p_tot = by_person.setdefault(person, {"free_gbp": 0.0, "portfolio_gbp": 0.0, "total_gbp": 0.0})
+            p_tot = by_person.setdefault(
+                person, {"free_gbp": 0.0, "portfolio_gbp": 0.0, "total_gbp": 0.0}
+            )
 
             for acc_type, creds in accounts.items():
                 data = fetch_cash_balance(creds["API_KEY_ID"], creds["API_SECRET_KEY"])
@@ -101,18 +123,17 @@ def balances():
 
                 free = as_float(data.get("free"))
                 invested_cost = as_float(data.get("invested"))
-                ppl = as_float(data.get("ppl"))        # unrealised P/L
+                ppl = as_float(data.get("ppl"))
                 total = as_float(data.get("total"))
-                portfolio = invested_cost + ppl        # “Portfolio Value”
+                portfolio = invested_cost + ppl
 
-                # Johnny/Invest displays $ but summaries in £
                 display_currency = "GBP"
                 fx = 1.0
                 if person == "Johnny" and acc_type == "Invest":
                     display_currency = "USD"
-                    if usd_to_gbp: fx = usd_to_gbp
+                    if usd_to_gbp:
+                        fx = usd_to_gbp
 
-                # Summaries in GBP
                 p_tot["free_gbp"] += free * fx
                 p_tot["portfolio_gbp"] += portfolio * fx
                 p_tot["total_gbp"] += total * fx
@@ -129,10 +150,28 @@ def balances():
                     "total": total,
                 })
 
+        fx_snapshot = get_fx_rates_from_gbp()
+        total_gbp = grand["total_gbp"]
+        total_usd = total_hkd = None
+        if fx_snapshot.get("USD") is not None:
+            total_usd = total_gbp * fx_snapshot["USD"]
+        if fx_snapshot.get("HKD") is not None:
+            total_hkd = total_gbp * fx_snapshot["HKD"]
+
         body = {
             "asOf": datetime.now(timezone.utc).isoformat(),
             "accounts": accounts_out,
-            "summary": {"grand": grand, "byPerson": by_person}
+            "summary": {"grand": grand, "byPerson": by_person},
+            "grandTotals": {
+                "GBP": total_gbp,
+                "USD": total_usd,
+                "HKD": total_hkd,
+            },
+            "fx": {
+                "base": "GBP",
+                "date": fx_snapshot.get("date"),
+                "rates": {"USD": fx_snapshot.get("USD"), "HKD": fx_snapshot.get("HKD")},
+            },
         }
         return JSONResponse(content=body, headers={"Cache-Control": "no-store"})
     except Exception as e:
