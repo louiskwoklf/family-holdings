@@ -1,0 +1,58 @@
+:root {
+  --bg: #0b0c10;
+  --card: #111319;
+  --muted: #8b93a6;
+  --text: #e9edf5;
+  --accent: #6aa1ff;
+  --border: #1a1f2b;
+  --ok: #20c997;
+  --warn: #ffd166;
+  --err: #ff6b6b;
+}
+
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif; }
+.container { width: min(1100px, 92%); margin: 0 auto; }
+
+.header { display:flex; align-items:end; justify-content:space-between; padding:28px 0 12px; }
+h1 { font-weight:700; font-size:28px; margin:0; letter-spacing:0.3px; }
+.asof { color:var(--muted); font-size:13px; }
+
+.card {
+  background: linear-gradient(180deg, #0f121a, #0b0e14);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px 18px 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+
+.card-title { color:var(--muted); font-size:13px; margin-bottom:8px; letter-spacing:.3px; }
+.card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.title { font-size:16px; font-weight:600; }
+.badge { font-size:12px; color:#0b0c10; background:var(--muted); padding:4px 8px; border-radius:999px; min-width:40px; text-align:center; }
+.badge.usd { background:#a0d8ff; }
+.badge.gbp { background:#b0f0d0; }
+
+.row.trio { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
+.metric .label { color:var(--muted); font-size:12px; margin-bottom:4px; }
+.metric .value { font-size:20px; font-weight:700; letter-spacing:.3px; }
+
+.grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-top:18px; }
+.by-person { margin:28px 0 50px; display:grid; gap:12px; }
+
+.person-line {
+  display:flex; justify-content:space-between; align-items:center;
+  background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px 14px;
+}
+.person-line .left { display:flex; gap:10px; align-items:center; }
+.person-line .pct { color:var(--muted); font-size:12px; }
+.person-line .vals { display:flex; gap:16px; }
+.person-line .vals span { color:var(--muted); font-size:13px; }
+.person-line .vals .val { color:var(--text); font-weight:600; margin-left:6px; }
+
+.error { margin-top:10px; color:var(--err); font-size:13px; }
+.hidden { display:none; }
+
+@media (max-width: 640px) {
+  .row.trio { grid-template-columns: 1fr; }
+}

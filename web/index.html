@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Accounts Overview</title>
+  <link rel="stylesheet" href="/assets/styles.css" />
+</head>
+<body>
+  <header class="container header">
+    <h1>Accounts Overview</h1>
+    <div id="asOf" class="asof"></div>
+  </header>
+
+  <main class="container">
+    <section class="grand">
+      <div class="card">
+        <div class="card-title">Grand Total (All People, All Accounts)</div>
+        <div class="row trio" id="grand">
+          <div class="metric"><div class="label">Total</div><div class="value" id="grand-total">—</div></div>
+          <div class="metric"><div class="label">Free</div><div class="value" id="grand-free">—</div></div>
+          <div class="metric"><div class="label">Portfolio Value</div><div class="value" id="grand-portfolio">—</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid" id="accounts"></section>
+    <section class="by-person" id="byPerson"></section>
+  </main>
+
+  <template id="account-card">
+    <div class="card">
+      <div class="card-head">
+        <div class="title"></div>
+        <div class="badge"></div>
+      </div>
+      <div class="row trio">
+        <div class="metric"><div class="label">Free</div><div class="value free">—</div></div>
+        <div class="metric"><div class="label">Portfolio Value</div><div class="value portfolio">—</div></div>
+        <div class="metric"><div class="label">Total</div><div class="value total">—</div></div>
+      </div>
+      <div class="error hidden"></div>
+    </div>
+  </template>
+
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>
