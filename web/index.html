@@ -14,31 +14,35 @@
 
   <main class="container">
     <section class="grand">
-      <div class="card">
+      <div class="card grand-card">
         <div class="card-title">Grand Total (All People, All Accounts)</div>
-        <div class="row trio" id="grand">
-          <div class="metric"><div class="label">Total</div><div class="value" id="grand-total">—</div></div>
-          <div class="metric"><div class="label">Free</div><div class="value" id="grand-free">—</div></div>
-          <div class="metric"><div class="label">Portfolio Value</div><div class="value" id="grand-portfolio">—</div></div>
-        </div>
+        <div class="grand-value" id="grand-total">—</div>
       </div>
     </section>
 
-    <section class="grid" id="accounts"></section>
-    <section class="by-person" id="byPerson"></section>
+    <section id="people"></section>
   </main>
 
+  <!-- Person section template -->
+  <template id="person-section">
+    <section class="person">
+      <div class="person-header">
+        <div class="person-name"></div>
+        <div class="person-total"></div>
+      </div>
+      <div class="person-subtext pct"></div>
+      <div class="grid person-accounts"></div>
+    </section>
+  </template>
+
+  <!-- Account card template (total only) -->
   <template id="account-card">
     <div class="card">
       <div class="card-head">
         <div class="title"></div>
         <div class="badge"></div>
       </div>
-      <div class="row trio">
-        <div class="metric"><div class="label">Free</div><div class="value free">—</div></div>
-        <div class="metric"><div class="label">Portfolio Value</div><div class="value portfolio">—</div></div>
-        <div class="metric"><div class="label">Total</div><div class="value total">—</div></div>
-      </div>
+      <div class="only-total value total">—</div>
       <div class="error hidden"></div>
     </div>
   </template>

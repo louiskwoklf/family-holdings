@@ -22,37 +22,34 @@ h1 { font-weight:700; font-size:28px; margin:0; letter-spacing:0.3px; }
   background: linear-gradient(180deg, #0f121a, #0b0e14);
   border:1px solid var(--border);
   border-radius:16px;
-  padding:18px 18px 14px;
+  padding:18px;
   box-shadow: 0 10px 30px rgba(0,0,0,.25);
 }
 
 .card-title { color:var(--muted); font-size:13px; margin-bottom:8px; letter-spacing:.3px; }
-.card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
 .title { font-size:16px; font-weight:600; }
 .badge { font-size:12px; color:#0b0c10; background:var(--muted); padding:4px 8px; border-radius:999px; min-width:40px; text-align:center; }
 .badge.usd { background:#a0d8ff; }
 .badge.gbp { background:#b0f0d0; }
 
-.row.trio { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
-.metric .label { color:var(--muted); font-size:12px; margin-bottom:4px; }
-.metric .value { font-size:20px; font-weight:700; letter-spacing:.3px; }
+.grand-card { margin-bottom: 22px; }
+.grand-value { font-size:34px; font-weight:800; letter-spacing:.3px; margin-top:4px; }
 
-.grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-top:18px; }
-.by-person { margin:28px 0 50px; display:grid; gap:12px; }
+.grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:14px; }
 
-.person-line {
-  display:flex; justify-content:space-between; align-items:center;
-  background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px 14px;
-}
-.person-line .left { display:flex; gap:10px; align-items:center; }
-.person-line .pct { color:var(--muted); font-size:12px; }
-.person-line .vals { display:flex; gap:16px; }
-.person-line .vals span { color:var(--muted); font-size:13px; }
-.person-line .vals .val { color:var(--text); font-weight:600; margin-left:6px; }
+.only-total.value { font-size:22px; font-weight:800; letter-spacing:.3px; margin-top:6px; }
+
+.person { margin: 24px 0 34px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.person-header { display:flex; align-items:center; justify-content:space-between; margin: 6px 2px 4px; }
+.person-name { font-size:18px; font-weight:700; }
+.person-total { font-size:18px; font-weight:800; }
+.person .pct { color:var(--muted); font-size:12px; margin: 2px 2px 12px; }
 
 .error { margin-top:10px; color:var(--err); font-size:13px; }
 .hidden { display:none; }
 
 @media (max-width: 640px) {
-  .row.trio { grid-template-columns: 1fr; }
+  .grand-value { font-size:28px; }
+  .only-total.value { font-size:20px; }
 }

@@ -1,4 +1,4 @@
-const API_BASE = ""; // empty -> fetch("/balances")
+const API_BASE = ""; // fetch("/balances")
 
 const fmtGBP = (n) => `£${Number(n).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}`;
 const fmtUSD = (n) => `$${Number(n).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2})}`;
@@ -9,62 +9,68 @@ const currencyFmt = (c) => (c === "USD" ? fmtUSD : fmtGBP);
 async function load() {
   const asOf = el("#asOf");
   const grandTotal = el("#grand-total");
-  const grandFree = el("#grand-free");
-  const grandPortfolio = el("#grand-portfolio");
-  const accountsGrid = el("#accounts");
-  const byPerson = el("#byPerson");
+  const peopleRoot = el("#people");
 
-  grandTotal.textContent = grandFree.textContent = grandPortfolio.textContent = "—";
-  accountsGrid.innerHTML = "";
+  grandTotal.textContent = "—";
+  peopleRoot.innerHTML = "";
 
   try {
     const res = await fetch(`${API_BASE}/balances`, { cache: "no-store" });
     const data = await res.json();
+
     asOf.textContent = data.asOf ? `As of ${new Date(data.asOf).toLocaleString()}` : "";
 
-    grandTotal.textContent     = fmtGBP(data.summary.grand.total_gbp || 0);
-    grandFree.textContent      = fmtGBP(data.summary.grand.free_gbp || 0);
-    grandPortfolio.textContent = fmtGBP(data.summary.grand.portfolio_gbp || 0);
+    // GRAND (Total only)
+    const grandTotalNum = data?.summary?.grand?.total_gbp || 0;
+    grandTotal.textContent = fmtGBP(grandTotalNum);
 
-    accountsGrid.innerHTML = "";
-    (data.accounts || []).forEach(acc => {
-      const node = tpl("account-card");
-      node.querySelector(".title").textContent = `${acc.person} — ${acc.account}`;
-      const badge = node.querySelector(".badge");
-      const code = acc.displayCurrency === "USD" ? "USD" : "GBP";
-      badge.textContent = code;
-      badge.classList.add(code.toLowerCase());
+    // Build a map person -> accounts[]
+    const accounts = data.accounts || [];
+    const byPerson = data.summary?.byPerson || {};
+    const personOrder = Object.keys(byPerson); // keep object order
 
-      const fmt = currencyFmt(code);
-      node.querySelector(".free").textContent = fmt(acc.free);
-      node.querySelector(".portfolio").textContent = fmt(acc.portfolio);
-      node.querySelector(".total").textContent = fmt(acc.total);
+    personOrder.forEach((person) => {
+      const personData = byPerson[person] || {};
+      const personTotal = personData.total_gbp || 0;
+      const pct = grandTotalNum ? ((personTotal / grandTotalNum) * 100).toFixed(1) : "0.0";
 
-      if (acc.error) {
-        const er = node.querySelector(".error");
-        er.textContent = acc.error;
-        er.classList.remove("hidden");
-      }
-      accountsGrid.appendChild(node);
+      const node = tpl("person-section");
+      node.querySelector(".person-name").textContent = person;
+      node.querySelector(".person-total").textContent = fmtGBP(personTotal);
+      node.querySelector(".person .pct").textContent = `${pct}% of grand total`;
+
+      const grid = node.querySelector(".person-accounts");
+
+      // this person's accounts
+      accounts
+        .filter(a => a.person === person)
+        .forEach(acc => {
+          const card = tpl("account-card");
+          card.querySelector(".title").textContent = acc.account;
+
+          const badge = card.querySelector(".badge");
+          const code = acc.displayCurrency === "USD" ? "USD" : "GBP";
+          badge.textContent = code;
+          badge.classList.add(code.toLowerCase());
+
+          // Show only TOTAL
+          const fmt = currencyFmt(code);
+          card.querySelector(".only-total").textContent = fmt(acc.total);
+
+          if (acc.error) {
+            const er = card.querySelector(".error");
+            er.textContent = acc.error;
+            er.classList.remove("hidden");
+          }
+          grid.appendChild(card);
+        });
+
+      peopleRoot.appendChild(node);
     });
 
-    byPerson.innerHTML = "";
-    const grandTotalNum = data.summary.grand.total_gbp || 0;
-    Object.entries(data.summary.byPerson || {}).forEach(([person, sums]) => {
-      const line = document.createElement("div");
-      line.className = "person-line";
-      const pct = grandTotalNum ? ((sums.total_gbp / grandTotalNum) * 100).toFixed(1) : "0.0";
-      line.innerHTML = `
-        <div class="left"><strong>${person}</strong><span class="pct">${pct}% of total</span></div>
-        <div class="vals">
-          <span>Total <span class="val">${fmtGBP(sums.total_gbp || 0)}</span></span>
-          <span>Free <span class="val">${fmtGBP(sums.free_gbp || 0)}</span></span>
-          <span>Portfolio <span class="val">${fmtGBP(sums.portfolio_gbp || 0)}</span></span>
-        </div>`;
-      byPerson.appendChild(line);
-    });
   } catch (e) {
-    accountsGrid.innerHTML = `<div class="card"><div class="error">Failed to load: ${String(e)}</div></div>`;
+    peopleRoot.innerHTML = `<div class="card"><div class="error">Failed to load: ${String(e)}</div></div>`;
   }
 }
+
 document.addEventListener("DOMContentLoaded", load);
