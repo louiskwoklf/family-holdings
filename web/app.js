@@ -25,7 +25,7 @@ function setGrandDisplay(ccy) {
     return;
   }
   out.textContent = currencyFmt(ccy)(val);
-  note.textContent = (ccy === "GBP") ? "" : "Converted server-side from GBP (snapshot)";
+  note.textContent = "";
 }
 
 function wireCurrencyToggle() {
