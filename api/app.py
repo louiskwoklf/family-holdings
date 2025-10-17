@@ -1,6 +1,6 @@
 import os, json, requests
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Any
+from typing import Dict, Any, List
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -44,6 +44,11 @@ ACCOUNTS: Dict[str, Dict[str, Dict[str, str]]] = {
             "API_SECRET_KEY": os.getenv("JOHNNY_ISA_SECRET", ""),
         },
     },
+}
+
+PERSON_ALIASES = {
+    "Rebecca": "Johnny and Rebecca",
+    "Johnny": "Johnny and Rebecca",
 }
 
 def as_float(x: Any) -> float:
@@ -108,17 +113,19 @@ def balances():
 
         by_person: Dict[str, Dict[str, float]] = {}
         grand = {"free_gbp": 0.0, "portfolio_gbp": 0.0, "total_gbp": 0.0}
-        accounts_out = []
+        accounts_by_person: Dict[str, List[Dict[str, Any]]] = {}
 
         for person, accounts in ACCOUNTS.items():
+            alias = PERSON_ALIASES.get(person, person)
             p_tot = by_person.setdefault(
-                person, {"free_gbp": 0.0, "portfolio_gbp": 0.0, "total_gbp": 0.0}
+                alias, {"free_gbp": 0.0, "portfolio_gbp": 0.0, "total_gbp": 0.0}
             )
+            person_accounts = accounts_by_person.setdefault(alias, [])
 
             for acc_type, creds in accounts.items():
                 data = fetch_cash_balance(creds["API_KEY_ID"], creds["API_SECRET_KEY"])
                 if "error" in data:
-                    accounts_out.append({"person": person, "account": acc_type, "error": data["error"]})
+                    person_accounts.append({"person": alias, "account": acc_type, "error": data["error"]})
                     continue
 
                 free = as_float(data.get("free"))
@@ -141,14 +148,27 @@ def balances():
                 grand["portfolio_gbp"] += portfolio * fx
                 grand["total_gbp"] += total * fx
 
-                accounts_out.append({
-                    "person": person,
+                person_accounts.append({
+                    "person": alias,
                     "account": acc_type,
                     "displayCurrency": display_currency,
                     "free": free,
                     "portfolio": portfolio,
                     "total": total,
                 })
+
+        def account_sort_key(acc: Dict[str, Any]) -> float:
+            if acc.get("error"):
+                return float("-inf")
+            total = as_float(acc.get("total"))
+            if acc.get("displayCurrency") == "USD" and usd_to_gbp:
+                return total * usd_to_gbp
+            return total
+
+        accounts_out: List[Dict[str, Any]] = []
+        for person in by_person.keys():
+            person_accounts = accounts_by_person.get(person, [])
+            accounts_out.extend(sorted(person_accounts, key=account_sort_key, reverse=True))
 
         fx_snapshot = get_fx_rates_from_gbp()
         total_gbp = grand["total_gbp"]
